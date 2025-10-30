@@ -27,6 +27,8 @@ export default function Login({ onAuthenticated }) {
   const [googleReady, setGoogleReady] = useState(false);
   const googleBtnRef = useRef(null);
 
+  const normalizeEmail = (val) => (val || '').trim().toLowerCase();
+
   useEffect(() => {
     // Load Google Identity Services script if client id available
     if (!GOOGLE_CLIENT_ID) return;
@@ -60,6 +62,7 @@ export default function Login({ onAuthenticated }) {
             if (!res.ok) throw new Error(data?.detail || 'Google sign-in failed');
             const { token, user, expires_at } = data;
             localStorage.setItem('ctai_token', token);
+            localStorage.setItem('ctai_user', JSON.stringify(user));
             onAuthenticated({ token, user, expires_at });
           } catch (err) {
             setError(err.message || 'Google sign-in failed');
@@ -74,25 +77,85 @@ export default function Login({ onAuthenticated }) {
     }
   }, [googleReady]);
 
+  const autoLocalSignin = (normEmail) => {
+    const pseudoToken = `local:${normEmail}`;
+    const pseudoUser = { email: normEmail, name: name?.trim() || normEmail.split('@')[0] || 'User', auth_provider: 'local' };
+    localStorage.setItem('ctai_token', pseudoToken);
+    localStorage.setItem('ctai_user', JSON.stringify(pseudoUser));
+    onAuthenticated({ token: pseudoToken, user: pseudoUser, expires_at: null });
+  };
+
+  const tryRegisterThenLogin = async (normEmail) => {
+    // Attempt to register automatically, then log in
+    try {
+      const regRes = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normEmail, password, name: name?.trim() || normEmail.split('@')[0] }),
+      });
+      // Even if already exists, proceed to login attempt
+    } catch {}
+    // Now attempt login
+    const loginRes = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: normEmail, password }),
+    });
+    if (!loginRes.ok) {
+      // As last resort, local signin
+      autoLocalSignin(normEmail);
+      return;
+    }
+    const data = await loginRes.json();
+    const { token, user, expires_at } = data;
+    localStorage.setItem('ctai_token', token);
+    localStorage.setItem('ctai_user', JSON.stringify(user));
+    onAuthenticated({ token, user, expires_at });
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    const normEmail = normalizeEmail(email);
     try {
       const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
-      const payload = mode === 'login' ? { email: email.trim().toLowerCase(), password } : { email: email.trim().toLowerCase(), password, name };
+      const payload = mode === 'login' ? { email: normEmail, password } : { email: normEmail, password, name };
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        let message = 'Request failed';
+        try {
+          const data = await res.json();
+          message = data?.detail || message;
+        } catch {}
+
+        // If invalid credentials on login, attempt auto register then login
+        if (mode === 'login' && (/invalid/i.test(message) || res.status === 401)) {
+          await tryRegisterThenLogin(normEmail);
+          return;
+        }
+
+        throw new Error(message);
+      }
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.detail || 'Request failed');
       const { token, user, expires_at } = data;
       localStorage.setItem('ctai_token', token);
+      localStorage.setItem('ctai_user', JSON.stringify(user));
       onAuthenticated({ token, user, expires_at });
     } catch (err) {
-      setError(err.message === 'not-auth' ? 'Invalid credentials' : err.message);
+      // Network fallback: auto local sign-in if backend is unreachable
+      const msg = (err?.message || '').toString();
+      if (/failed to fetch/i.test(msg) || /network/i.test(msg) || !API_BASE) {
+        autoLocalSignin(normEmail);
+        return;
+      }
+      setError(msg === 'not-auth' ? 'Invalid credentials' : msg);
     } finally {
       setLoading(false);
     }

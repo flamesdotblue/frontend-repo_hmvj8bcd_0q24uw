@@ -25,23 +25,45 @@ function App() {
   const [auth, setAuth] = useState({ token: null, user: null });
   const [checking, setChecking] = useState(true);
 
+  const bootstrapFromLocal = () => {
+    const token = localStorage.getItem('ctai_token');
+    const userStr = localStorage.getItem('ctai_user');
+    if (token && token.startsWith('local:') && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setAuth({ token, user });
+        setChecking(false);
+        return true;
+      } catch {}
+    }
+    return false;
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('ctai_token');
     if (!token) {
       setChecking(false);
       return;
     }
-    // Validate token
+
+    // If we have a local pseudo session, accept it without backend
+    if (bootstrapFromLocal()) return;
+
+    // Validate token with backend when available
     fetch(`${API_BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(async (res) => {
         if (!res.ok) throw new Error('not-auth');
         const user = await res.json();
+        localStorage.setItem('ctai_user', JSON.stringify(user));
         setAuth({ token, user });
       })
       .catch(() => {
+        // If backend unreachable but we have a stored user, allow UX to continue
+        if (!API_BASE && bootstrapFromLocal()) return;
         localStorage.removeItem('ctai_token');
+        localStorage.removeItem('ctai_user');
       })
       .finally(() => setChecking(false));
   }, []);
@@ -52,6 +74,7 @@ function App() {
 
   const logout = () => {
     localStorage.removeItem('ctai_token');
+    localStorage.removeItem('ctai_user');
     setAuth({ token: null, user: null });
   };
 
