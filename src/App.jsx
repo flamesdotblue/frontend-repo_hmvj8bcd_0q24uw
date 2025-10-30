@@ -1,28 +1,47 @@
-import { useState } from 'react'
+import React from 'react';
+import Hero from './components/Hero';
+import UploadSection from './components/UploadSection';
+import ScenarioModeler from './components/ScenarioModeler';
+import ConfidenceMeter from './components/ConfidenceMeter';
+import { Shield } from 'lucide-react';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600">
+              <Shield className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-geist text-lg font-semibold">Chanakya</span>
+          </div>
+          <nav className="hidden gap-6 text-sm text-slate-300 sm:flex">
+            <a href="#upload" className="hover:text-white">Upload</a>
+            <a href="#scenarios" className="hover:text-white">Scenarios</a>
+            <a href="#confidence" className="hover:text-white">Confidence</a>
+          </nav>
         </div>
-      </div>
+      </header>
+
+      <main>
+        <Hero />
+        <UploadSection />
+        <ScenarioModeler />
+        <section id="confidence">
+          <ConfidenceMeter />
+        </section>
+      </main>
+
+      <footer className="border-t border-white/10 bg-slate-950/80 py-8">
+        <div className="mx-auto max-w-6xl px-6 text-center text-xs text-slate-400">
+          <p>
+            Guidance is informational and grounded in Indian Income Tax sections. Connect the AI backend to enable document intelligence and personalized strategies.
+          </p>
+        </div>
+      </footer>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
