@@ -22,7 +22,7 @@ export default function Hero() {
         </div>
 
         <h1 className="font-geist text-4xl font-semibold leading-tight sm:text-5xl md:text-6xl">
-          Chanakya — Your Strategic AI Tax Guru
+          ClearTaxers‑Ai — Your Strategic AI Tax Guru
         </h1>
         <p className="mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
           Upload Form 16, ask “what-if” questions, and get confident, compliant advice grounded in Indian Income Tax law.

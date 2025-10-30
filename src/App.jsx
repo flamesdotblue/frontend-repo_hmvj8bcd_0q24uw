@@ -14,7 +14,7 @@ function App() {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600">
               <Shield className="h-4 w-4 text-white" />
             </div>
-            <span className="font-geist text-lg font-semibold">Chanakya</span>
+            <span className="font-geist text-lg font-semibold">ClearTaxers‑Ai</span>
           </div>
           <nav className="hidden gap-6 text-sm text-slate-300 sm:flex">
             <a href="#upload" className="hover:text-white">Upload</a>
