@@ -6,7 +6,20 @@ import ConfidenceMeter from './components/ConfidenceMeter';
 import Login from './components/Login';
 import { Shield, LogOut } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
+const inferBackendBase = () => {
+  const fromEnv = import.meta.env.VITE_BACKEND_URL || '';
+  if (fromEnv) return fromEnv;
+  try {
+    const url = new URL(window.location.href);
+    if (url.port === '3000') {
+      url.port = '8000';
+      return url.origin;
+    }
+  } catch {}
+  return '';
+};
+
+const API_BASE = inferBackendBase();
 
 function App() {
   const [auth, setAuth] = useState({ token: null, user: null });
